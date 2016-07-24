@@ -1,5 +1,13 @@
 angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', 'firebase'])
 
+/**
+ * Authentication related constants
+ */
+.constant('AUTH_EVENTS', {
+  notAuthenticated: 'auth-not-authenticated',
+  notAuthorized: 'auth-not-authorized'
+})
+
 .run(function($ionicPlatform) {
   $ionicPlatform.ready(function() {
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
@@ -20,8 +28,15 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
 
   $stateProvider
 
+  // main landing page if user is not authenticated
+  .state('login', {
+    url: '/login',
+    templateUrl: 'templates/login.html',
+    controller: 'AuthCtrl as authCtrl'
+  })
+
   // setup an abstract state for the tabs directive
-    .state('tab', {
+  .state('tab', {
     url: '/tab',
     abstract: true,
     templateUrl: 'templates/tabs.html'
@@ -39,6 +54,34 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
   });
 
   // if none of the above states are matched, use this as the fallback
-  $urlRouterProvider.otherwise('/tab/dash');
+  $urlRouterProvider.otherwise(function ($injector) {
+    $state = $injector.get('$state');
+    $state.go('tab.dash');
+  });
 
+})
+
+/**
+ * Intercept all state changes
+ */
+.run(function ($rootScope, $state, AuthService, AUTH_EVENTS) {
+  $rootScope.$on('$stateChangeStart', function (event,next, nextParams, fromState) {
+
+    //TODO: Complete unauthorized check
+    if ('data' in next && 'authorizedRoles' in next.data) {
+      // var authorizedRoles = next.data.authorizedRoles;
+      // if (!AuthService.isAuthorized(authorizedRoles)) {
+      //   event.preventDefault();
+      //   $state.go($state.current, {}, {reload: true});
+      //   $rootScope.$broadcast(AUTH_EVENTS.notAuthorized);
+      // }
+    };
+ 
+    if (!AuthService.isAuthenticated()) {
+      if (next.name !== 'login') {
+        event.preventDefault();
+        $state.go('login');
+      }
+    }
+  });
 });
