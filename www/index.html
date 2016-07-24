@@ -16,6 +16,20 @@
   <!-- ionic/angularjs js -->
   <script src="lib/ionic/js/ionic.bundle.js"></script>
 
+  <!-- Firebase and angularfire libs -->
+  <script src="https://www.gstatic.com/firebasejs/3.2.0/firebase.js"></script>
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyDtwU8DyixMg3ukvmCILM_4lpwdHqi16bI",
+      authDomain: "cashpaw-9d6bb.firebaseapp.com",
+      databaseURL: "https://cashpaw-9d6bb.firebaseio.com",
+      storageBucket: "cashpaw-9d6bb.appspot.com",
+    };
+    firebase.initializeApp(config);
+  </script>
+  <script src="lib/angularfire/dist/angularfire.min.js"></script>
+
   <!-- cordova script (this will be a 404 during development) -->
   <script src="cordova.js"></script>
 
