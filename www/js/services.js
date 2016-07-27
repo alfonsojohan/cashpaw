@@ -2,7 +2,7 @@ angular.module('starter.services', [])
 .service('AuthService', AuthService)
 .factory('AuthInterceptor', function ($rootScope, $q, AUTH_EVENTS) {
 
-  console.log('AuthInterceptor init');
+  console.log('AuthInterceptor');
 
   return {
     responseError: function (response) {
@@ -20,7 +20,7 @@ angular.module('starter.services', [])
 
 function AuthService($firebaseAuth) {
 
-  console.log('AuthService init');
+  console.log('AuthService');
 
   var auth = $firebaseAuth();
 

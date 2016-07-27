@@ -10,7 +10,7 @@ angular.module('starter.controllers', [])
  */
 function AppCtrl($scope, AUTH_EVENTS) {
   
-  console.log('AppCtrl init');
+  console.log('AppCtrl');
 
   $scope.$on(AUTH_EVENTS.notAuthorized, function(event) {
     var alertPopup = $ionicPopup.alert({
@@ -38,10 +38,11 @@ function AppCtrl($scope, AUTH_EVENTS) {
 function InitCtrl(
   $state,
   $rootScope,
+  PouchDbService,
   AuthService, 
   AUTH_EVENTS) {
 
-  console.log('InitCtrl init');
+  console.log('InitCtrl');
 
   function monitorStateChangeStart(event, next, nextParams, fromState) {
 
@@ -71,6 +72,8 @@ function InitCtrl(
    */
   $rootScope.$on('$stateChangeStart', monitorStateChangeStart);
 
+  console.log('Pouch db:', PouchDbService.db());
+
   $state.go('tab.dash', {
     location: "replace"
   });
@@ -84,7 +87,7 @@ function AuthCtrl(
   $state,
   AuthService) {
 
-  console.log('AuthCtrl init');
+  console.log('AuthCtrl');
 
   this.data = {u: null, p: null};
 
@@ -120,5 +123,5 @@ function AuthCtrl(
  * Main tab controller
  */
 function DashCtrl($scope, AUTH_EVENTS) {
-  console.log('DashCtrl init');
+  console.log('DashCtrl');
 };  // eo DashCtrl

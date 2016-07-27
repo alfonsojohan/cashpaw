@@ -49,4 +49,8 @@ function PouchDbService(
     return _db.info();
   };  
 
+  this.db = function () {
+      return _db;
+  };
+
 };  // eo PouchDbService

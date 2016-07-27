@@ -52,7 +52,7 @@ angular.module('starter', [
     controller: 'InitCtrl as initCtrl',
     resolve: {
       'resolvePouchDb': function (PouchDbService) {
-        console.log('state:init. resolve: resolvePouchDb');
+        console.log('stateProvider - state:init. resolve: resolvePouchDb');
         return PouchDbService.init();
       }
     },
