@@ -1,4 +1,9 @@
-angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', 'firebase'])
+angular.module('starter', [
+  'ionic', 
+  'starter.controllers', 
+  'starter.services', 
+  'firebase'
+])
 
 /**
  * Authentication related constants
@@ -9,7 +14,13 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
 })
 
 .run(function($ionicPlatform) {
+
+  console.log('In app.run function');
+
   $ionicPlatform.ready(function() {
+    
+    console.log('$ionicPlatform.ready is resolved');
+
     // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
     // for form inputs)
     if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
@@ -26,7 +37,26 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
 
 .config(function($stateProvider, $urlRouterProvider) {
 
+  console.log('in app.config function');
+
   $stateProvider
+
+  /**
+   * This state is used to initialized all resources before the app starts
+   * Should happen only once at startup of the app and before the login page
+   * is displayed. Any other resolve methods should be added here
+   */
+  .state('init', {
+    url: '/init',
+    templateUrl: 'templates/init.html',
+    controller: 'InitCtrl as initCtrl',
+    resolve: {
+      'resolvePouchDb': function (PouchDbService) {
+        console.log('state:init. resolve: resolvePouchDb');
+        return PouchDbService.init();
+      }
+    },
+  })
 
   // main landing page if user is not authenticated
   .state('login', {
@@ -34,12 +64,12 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
     templateUrl: 'templates/login.html',
     controller: 'AuthCtrl as authCtrl'
   })
-
+  
   // setup an abstract state for the tabs directive
   .state('tab', {
     url: '/tab',
     abstract: true,
-    templateUrl: 'templates/tabs.html'
+    templateUrl: 'templates/tabs.html',
   })
 
   // Each tab has its own nav history stack:
@@ -48,7 +78,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
     views: {
       'tab-dash': {
         templateUrl: 'templates/tab-dash.html',
-        controller: 'DashCtrl as dashCtrl'
+        controller: 'DashCtrl as dashCtrl',
       }
     }
   });
@@ -56,32 +86,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.services', '
   // if none of the above states are matched, use this as the fallback
   $urlRouterProvider.otherwise(function ($injector) {
     $state = $injector.get('$state');
-    $state.go('tab.dash');
+    $state.go('init');
   });
 
-})
-
-/**
- * Intercept all state changes
- */
-.run(function ($rootScope, $state, AuthService, AUTH_EVENTS) {
-  $rootScope.$on('$stateChangeStart', function (event,next, nextParams, fromState) {
-
-    //TODO: Complete unauthorized check
-    if ('data' in next && 'authorizedRoles' in next.data) {
-      // var authorizedRoles = next.data.authorizedRoles;
-      // if (!AuthService.isAuthorized(authorizedRoles)) {
-      //   event.preventDefault();
-      //   $state.go($state.current, {}, {reload: true});
-      //   $rootScope.$broadcast(AUTH_EVENTS.notAuthorized);
-      // }
-    };
- 
-    if (!AuthService.isAuthenticated()) {
-      if (next.name !== 'login') {
-        event.preventDefault();
-        $state.go('login');
-      }
-    }
-  });
 });

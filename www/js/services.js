@@ -22,6 +22,8 @@ function AuthService($firebaseAuth) {
 
   console.log('AuthService init');
 
+  var auth = $firebaseAuth();
+
   this.logout = function () {
     console.log('TODO: AuthService.logout');
   };
@@ -35,8 +37,6 @@ function AuthService($firebaseAuth) {
     
     console.log('AuthService.login', uid, pwd);
 
-    var auth = $firebaseAuth();
-
     // login with email / password combo
     return auth.$signInWithEmailAndPassword("ajohan@yahoo.com", "password");
     
@@ -46,4 +46,25 @@ function AuthService($firebaseAuth) {
     //   console.log("Authentication failed:", error);
     // });
   };
+
+  this.facebookLogin = function () {
+
+    auth.$signInWithPopup("facebook").then(function(firebaseUser) {
+      console.log("Signed in as:", firebaseUser);
+    }).catch(function(error) {
+      console.log("Authentication failed:", error);
+    });  
+    // return auth.$signInWithPopup("faceboook");
+
+  };  // eo AuthService.facebookLogin
+
+  this.googleLogin = function () {
+    return auth.$signInWithPopup("google")
+    .then(function(firebaseUser) {
+      console.log("Signed in as:", firebaseUser);
+    }).catch(function(error) {
+      console.log("Authentication failed:", error);
+    });  
+  }
+
 };  // eo AuthService
