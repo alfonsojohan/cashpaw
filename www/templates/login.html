@@ -1,0 +1,18 @@
+<ion-view view-title="Sign-In" name="login-view" hide-back-button="true">
+  <ion-content class="padding">
+    <div class="list list-inset">
+      <label class="item item-input">
+              <input type="text" placeholder="Username" ng-model="authCtrl.data.u">
+          </label>
+      <label class="item item-input">
+              <input type="password" placeholder="Password" ng-model="authCtrl.data.p">
+          </label>
+    </div>
+    <button class="button button-block button-positive" ng-click="authCtrl.login(authCtrl.data)">Login</button>
+  
+    <div>
+      <button class="button button-block" ng-click="authCtrl.fbLogin()">Facebook Login</button>
+      <button class="button button-block" ng-click="authCtrl.googleLogin()">Google Login</button>
+    </div>
+  </ion-content>
+</ion-view>
