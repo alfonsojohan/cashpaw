@@ -6,9 +6,14 @@ angular.module('starter.controllers', [])
 
 /**
  * This controller is defined at the body of the app and will be called as default
- * We do the authentication and authorization checking here
+ * We do the authentication and authorization checking here. 
  */
-function AppCtrl($scope, AUTH_EVENTS) {
+function AppCtrl(
+  $scope,
+  $state,
+  $ionicPopup,
+  AuthService, 
+  AUTH_EVENTS) {
   
   console.log('AppCtrl');
 
@@ -23,10 +28,10 @@ function AppCtrl($scope, AUTH_EVENTS) {
     
     AuthService.logout();
     
-    var alertPopup = $ionicPopup.alert({
-      title: 'Session Lost!',
-      template: 'Sorry, You have to login again.'
-    });
+    // var alertPopup = $ionicPopup.alert({
+    //   title: 'Session Lost!',
+    //   template: 'Sorry, You have to login again.'
+    // });
 
     $state.go('login', {
       location: "replace"
@@ -46,7 +51,11 @@ function InitCtrl(
 
   function monitorStateChangeStart(event, next, nextParams, fromState) {
 
-    console.log('InitCtrl.monitorStateChangeStart');
+    console.log('InitCtrl.monitorStateChangeStart', next, fromState);
+
+    // if ("init" == fromState.name) {
+    //   return true;
+    // }
 
     //TODO: Complete unauthorized check
     if ('data' in next && 'authorizedRoles' in next.data) {
@@ -62,21 +71,40 @@ function InitCtrl(
       if (next.name !== 'login') {
         console.info('User is not authenticated, sending to login page');
         event.preventDefault();
-        $state.go('login');
+        $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
       }
     }
   };
 
   /**
-   * Intercept all state changes and check for authentication & authorization
+   * Init the authentication service, once completed move to the dashboard
+   * The event monitor will handle the rest
    */
-  $rootScope.$on('$stateChangeStart', monitorStateChangeStart);
+  PouchDbService.init()
+  .then(function () {
+    console.log('PouchDb init complete');
+    return AuthService.init();  
+  })
+  .then(function (data) {
+    
+    console.log('AuthService.init complete.');
+    
+    /**
+     * Intercept all state changes and check for authentication & authorization
+     */
+    $rootScope.$on('$stateChangeStart', monitorStateChangeStart);
 
-  console.log('Pouch db:', PouchDbService.db());
+    console.log('Going to dash...');
+    $state.go('tab.dash', {
+      location: "replace"
+    });
 
-  $state.go('tab.dash', {
-    location: "replace"
+    return true;
+  })
+  .catch(function (error) {
+    console.error('Auth.init failed.', error);
   });
+  
 };
 
 /**
@@ -84,44 +112,74 @@ function InitCtrl(
  */
 function AuthCtrl(
   $ionicLoading, 
+  $ionicPopup,
   $state,
-  AuthService) {
+  AuthService,
+  AUTH_EVENTS) {
 
   console.log('AuthCtrl');
 
-  this.data = {u: null, p: null};
+  this.data = AuthService.formData;
 
+  /**
+   * Handle login click from UI
+   */
   this.login = function (data) {
     
     console.log('AuthCtrl.login', data);
 
-    $ionicLoading.show();
-    AuthService.login(data.u, data.p)
-    .then(function (firebaseUser) {
-      console.log("Signed in as:", firebaseUser.uid);
-      $state.go('tab.dash');
-    })
-    .catch(function (error) {
-      console.log("Authentication failed:", error);
-    })
-    .finally(function() {
-      $ionicLoading.hide();
-    });
+    try {
+      $ionicLoading.show();
+
+      AuthService.login(data)
+      .then(function (firebaseUser) {
+        console.log("Signed in as:", firebaseUser);
+        // $state.go('tab.dash', {
+        //   location: "replace"
+        // });
+      })
+      .catch(function (error) {
+        console.log("Authentication failed:", error);
+
+        $ionicPopup.alert({
+          title: 'Oops',
+          template: error.message
+        });
+      })
+      .finally(function() {
+        $ionicLoading.hide();
+      });
+      
+    } catch (e) {
+
+      var msg = 'An uknown error has occured. ' + e;
+      switch (e) {
+        case AUTH_EVENTS.invalidFormData:
+          msg = 'Your email and password cannot be blank'; 
+          break;
+      }
+
+      $ionicPopup.alert({
+        title: 'Oops',
+        template: msg
+      });
+      $ionicLoading.hide();      
+    };
   
   };  // eo AuthCtrl.login
 
-  this.fbLogin = function () {
-    AuthService.facebookLogin();
-  };  // eo AuthCtrl.fbLogin
-
-  this.googleLogin = function () {
-    AuthService.googleLogin();
+  this.logout = function () {
+    AuthService.logout();
   };
 };
 
 /**
  * Main tab controller
  */
-function DashCtrl($scope, AUTH_EVENTS) {
+function DashCtrl(AuthService) {
   console.log('DashCtrl');
+
+  this.logout = function () {
+    AuthService.logout();
+  };
 };  // eo DashCtrl

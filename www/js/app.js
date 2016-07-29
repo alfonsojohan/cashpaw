@@ -10,7 +10,9 @@ angular.module('starter', [
  */
 .constant('AUTH_EVENTS', {
   notAuthenticated: 'auth-not-authenticated',
-  notAuthorized: 'auth-not-authorized'
+  notAuthorized: 'auth-not-authorized',
+  unknownProvider: 'auth-unknown-provider',
+  invalidFormData: 'auth-invalid-form-data'
 })
 
 .run(function($ionicPlatform) {
@@ -50,12 +52,12 @@ angular.module('starter', [
     url: '/init',
     templateUrl: 'templates/init.html',
     controller: 'InitCtrl as initCtrl',
-    resolve: {
-      'resolvePouchDb': function (PouchDbService) {
-        console.log('stateProvider - state:init. resolve: resolvePouchDb');
-        return PouchDbService.init();
-      }
-    },
+    // resolve: {
+    //   'resolveServices': function (PouchDbService) {
+    //     console.log('stateProvider - state:init. resolve: resolveServices');
+    //     return PouchDbService.init();
+    //   },
+    // },
   })
 
   // main landing page if user is not authenticated
