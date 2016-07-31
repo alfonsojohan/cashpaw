@@ -43,6 +43,7 @@ function AppCtrl(
 function InitCtrl(
   $state,
   $rootScope,
+  $ionicHistory,
   PouchDbService,
   AuthService, 
   AUTH_EVENTS) {
@@ -52,10 +53,6 @@ function InitCtrl(
   function monitorStateChangeStart(event, next, nextParams, fromState) {
 
     console.log('InitCtrl.monitorStateChangeStart', next, fromState);
-
-    // if ("init" == fromState.name) {
-    //   return true;
-    // }
 
     //TODO: Complete unauthorized check
     if ('data' in next && 'authorizedRoles' in next.data) {
@@ -95,6 +92,14 @@ function InitCtrl(
     $rootScope.$on('$stateChangeStart', monitorStateChangeStart);
 
     console.log('Going to dash...');
+
+    $ionicHistory.clearHistory();
+    $ionicHistory.nextViewOptions({
+      disableBack: true,
+      disableAnimate: true,
+      historyRoot: true
+    });
+
     $state.go('tab.dash', {
       location: "replace"
     });

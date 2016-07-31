@@ -22,6 +22,7 @@ function AuthService(
   $q, 
   $state,
   $rootScope,
+  $ionicHistory,
   $firebaseAuth,
   AUTH_EVENTS,
   PouchDbService) {
@@ -54,18 +55,30 @@ function AuthService(
       _authData = null;
 
       // Delete the pouchdb document
-      _pouchDb.get(_AUTH_ID)
-      .then(function (doc) {
-        return _pouchDb.remove(doc);
-      })
-      .then(function () {
-         $state.go('login', {
-          location: "replace"
+      try {
+        _pouchDb.get(_AUTH_ID)
+        .then(function (doc) {
+          return _pouchDb.remove(doc);
+        })
+        .then(function () {
+          
+          $ionicHistory.clearHistory();
+          $ionicHistory.nextViewOptions({
+            disableBack: true,
+            disableAnimate: true,
+            historyRoot: true
+          });
+
+          $state.go('login', {
+            location: "replace"
+          });
+        })
+        .error(function (err) {
+          console.error('AuthService -> onAuthStateChange: ', err);
         });
-      })
-      .error(function (err) {
-        console.error(err);
-      });
+      } catch (err) {
+        console.error('AuthService -> onAuthStateChange. Exception: ', err);
+      };
     
       // $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
     } else {
@@ -77,6 +90,13 @@ function AuthService(
         data: data
       })
       .then(function () {
+        $ionicHistory.clearHistory();
+        $ionicHistory.nextViewOptions({
+          disableBack: true,
+          disableAnimate: true,
+          historyRoot: true
+        });
+
         $state.go('tab.dash', {
           location: "replace"
         });
@@ -123,18 +143,7 @@ function AuthService(
   this.logout = function () {
     console.log('AuthService.logout');
     _that.formData.p = null;
-    // _db.get(_AUTH_ID)
-    // .then(function (doc) {
-    //   _db.remove(doc);
-    // })
-    // .error(function (err) {
-    //   console.error(err);
-    // });
-    
     _auth.$signOut();
-    // if(_authData) {
-    //   return PouchDbService.db().remove(_authData);
-    // }
   };
 
   /**
@@ -156,20 +165,6 @@ function AuthService(
 
     console.log('AuthService.login', data);
     
-    // $firebaseAuth().$signInWithEmailAndPassword(data.u, data.p)
-    // .then(function (data) {
-    //   console.log('AuthService.login successful. Updating pouchdb');
-    //   // Save the data in pouchdb storage
-    //   // return _db.put({
-    //   //   _id: 'auth',
-    //   //   data: data
-    //   // });
-    // })
-    // .catch(function (error) {
-    //   console.log('Authservice.login error');
-    //   console.error(error);
-    // });
-
     return _auth.$signInWithEmailAndPassword(data.u, data.p);
   };
 
