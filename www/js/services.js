@@ -36,8 +36,7 @@ function AuthService(
   var _db = PouchDbService.db();
   var _AUTH_ID = 'auth';
 
-  // this.formData = {u: null, p: null};
-  this.formData = {u: 'ajohan@yahoo.com', p: 'password'};
+  this.formData = {u: null, p: null};
 
   function onAuthStateChange(data) {
 
