@@ -24,7 +24,7 @@ angular.module('starter', [
   $ionicHistory,
   PouchDbService) {
 
-  console.log('In app.run function');
+  // console.log('In app.run function');
 
   $ionicPlatform.ready(function() {
     
@@ -66,7 +66,7 @@ angular.module('starter', [
 
 .config(function($stateProvider, $urlRouterProvider) {
 
-  console.log('in app.config function');
+  // console.log('in app.config function');
 
   /**
    * Temporary state that waits for the platform ready to complete before going to the init state

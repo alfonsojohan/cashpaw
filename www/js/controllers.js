@@ -16,7 +16,7 @@ function AppCtrl(
   AuthService, 
   AUTH_EVENTS) {
   
-  console.log('AppCtrl');
+  // console.log('AppCtrl');
 
   $scope.$on(AUTH_EVENTS.notAuthorized, function(event) {
     var alertPopup = $ionicPopup.alert({
@@ -54,7 +54,7 @@ function InitCtrl(
   AuthService, 
   AUTH_EVENTS) {
 
-  console.log('InitCtrl');
+  // console.log('InitCtrl');
 
   function monitorStateChangeStart(event, next, nextParams, fromState) {
 
@@ -71,14 +71,18 @@ function InitCtrl(
     };
 
     if (!AuthService.isAuthenticated()) {
-      if (next.name == 'signup') {
-          // do nothing
+
+      switch (next.name) {
+        case 'signup':
+        case 'login':
           return true;
-      } else if (next.name !== 'login') {
-        console.info('User is not authenticated, sending to login page');
-        event.preventDefault();
-        $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
-      }
+
+        default:
+          console.info('User is not authenticated, sending to login page');
+          event.preventDefault();
+          $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
+      };
+
     } else {
       //TODO: Check the validity of the login token
     }
@@ -100,7 +104,7 @@ function InitCtrl(
      */
     $rootScope.$on('$stateChangeStart', monitorStateChangeStart);
 
-    console.log('Going to dash...');
+    // console.log('Going to dash...');
 
     $ionicHistory.clearHistory();
     $ionicHistory.nextViewOptions({
@@ -131,7 +135,7 @@ function AuthCtrl(
   AuthService,
   AUTH_EVENTS) {
 
-  console.log('AuthCtrl');
+  // console.log('AuthCtrl');
 
   this.data = AuthService.formData;
   this.newUserData = {u: null, p: null};
@@ -186,7 +190,26 @@ function AuthCtrl(
 
   this.signup = function (data) {
     console.log('AuthCtrl.signup ', data);
-    AuthService.signup(data);
+    try {
+      $ionicLoading.show();
+      AuthService.signup(data)
+      .then(function (result) {
+
+      })
+      .catch(function (result) {
+        $ionicPopup.alert({
+          title: 'Signup Failed',
+          template: result.message
+        });
+      })    
+    } catch (error) {
+      $ionicPopup.alert({
+        title: 'Ooops',
+        template: error
+      });      
+    } finally {
+      $ionicLoading.hide();
+    }
   };  // eo AuthCtrl.signup
 
   this.logout = function () {

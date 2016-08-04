@@ -2,7 +2,7 @@ angular.module('starter.services', [])
 .service('AuthService', AuthService)
 .factory('AuthInterceptor', function ($rootScope, $q, AUTH_EVENTS) {
 
-  console.log('AuthInterceptor');
+  // console.log('AuthInterceptor');
 
   return {
     responseError: function (response) {
@@ -29,7 +29,7 @@ function AuthService(
   AUTH_EVENTS,
   PouchDbService) {
 
-  console.log('AuthService');
+  // console.log('AuthService');
 
   var _that = this;
   var _auth = $firebaseAuth();
@@ -40,20 +40,34 @@ function AuthService(
 
   this.formData = {u: null, p: null};
 
+  function resetHistory() {
+    $ionicHistory.clearHistory();
+    $ionicHistory.nextViewOptions({
+      disableBack: true,
+      disableAnimate: true,
+      historyRoot: true
+    });
+  };
+
+  function showLogin() {
+    resetHistory();
+    return $state.go('login', {
+      location: "replace"
+    });
+  };
+
   function onAuthStateChange(data) {
 
     var _pouchDb = PouchDbService.db();
     
-    console.log('AuthService -> $firebaseAuth.onAuthStateChange event triggered, Data:', data);
+    console.log('AuthService -> $firebaseAuth.onAuthStateChange event triggered, Data:', data, $state);
 
-    // var _db = PouchDbService.db();
-    console.log('onAuthStateChange');
-    
+    _authData = null;
+
     /**
      * If data is null then its a logout event, else its a sign on event
      */
     if (null === data) {
-      _authData = null;
 
       // Delete the pouchdb document
       try {
@@ -63,22 +77,13 @@ function AuthService(
           return _pouchDb.remove(doc);
         })
         .then(function () {
-          
-          $ionicHistory.clearHistory();
-          $ionicHistory.nextViewOptions({
-            disableBack: true,
-            disableAnimate: true,
-            historyRoot: true
-          });
-
-          $state.go('login', {
-            location: "replace"
-          });
+          showLogin();
         })
         .catch(function (err) {
           switch (err.status) {
             case 404:
-              // do nothing since the document is already deleted
+              // go to login screen since the document is already deleted
+              showLogin();
               break;
               
             default:
@@ -96,7 +101,7 @@ function AuthService(
       if(!data.emailVerified) {
         console.log('Email address is not verified. Exiting... ', data);
         $rootScope.$broadcast(AUTH_EVENTS.emailNotVerified);
-        _that.logout();
+        return _that.logout();
       };
 
       _authData = data;
@@ -107,13 +112,7 @@ function AuthService(
         data: data
       })
       .then(function () {
-        $ionicHistory.clearHistory();
-        $ionicHistory.nextViewOptions({
-          disableBack: true,
-          disableAnimate: true,
-          historyRoot: true
-        });
-
+        resetHistory();
         $state.go('tab.dash', {
           location: "replace"
         });
@@ -128,8 +127,8 @@ function AuthService(
    * Monitor the firebase auth state changes
    */
   this.monitorAuthChange = function () {
-    console.log('AuthService.monitorAuthChange - monitoring for Firebase auth events');
-    _unregisterAuthCallback = _auth.$onAuthStateChanged(onAuthStateChange);
+    // console.log('AuthService.monitorAuthChange - monitoring for Firebase auth events');
+    _unregisterAuthCallback = _auth.$onAuthStateChanged(onAuthStateChange, _that);
   };
 
   this.init = function () {
@@ -171,7 +170,7 @@ function AuthService(
    */
   this.isAuthenticated = function () {
     var usr = _auth.$getAuth();
-    console.log('AuthService.isAuthenticatied', usr);
+    console.log('AuthService.isAuthenticated:', null !== usr);
     if (!usr || !usr.emailVerified) {
       _authData = null;
     }
@@ -194,33 +193,23 @@ function AuthService(
 
   this.signup = function (data) {
 
-    $ionicLoading.show();
+    var defer = $q.defer();
     
-    try {
-      _auth.$createUserWithEmailAndPassword(data.u, data.p)
-      .then(function (result) {
-        console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword success', result);
-        result.sendEmailVerification();
-      })
-      .catch(function (result) {
-        console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword fail', result);  
-        $ionicPopup.alert({
-          title: 'Signup Failed',
-          template: result.message
-        });    
-      })
-      .finally(function () {
-        $ionicLoading.hide();
-      });
-    } catch (error) {
-      $ionicPopup.alert({
-        title: 'Ooops',
-        template: error
-      });      
-    } finally {
-        $ionicLoading.hide();
-    };
+    _auth.$createUserWithEmailAndPassword(data.u, data.p)
+    .then(function (result) {
+      out = result;
+      console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword success', result);
+      result.sendEmailVerification();
+      defer.resolve(out);
+    })
+    .catch(function (result) {
+      console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword fail', result);  
+      defer.reject(result);
+    })
+    .finally(function () {
+    });
 
+    return defer.promise;
   };  // eo AuthService.signup
 
 };  // eo AuthService
