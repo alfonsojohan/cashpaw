@@ -1,0 +1,18 @@
+<ion-view view-title="Sign up">
+  <ion-content>
+    <div class="list list-inset">
+    <label class="item item-input">
+      <span class="input-label">Email</span>
+      <input type="email" id="email" placeholder="Email" ng-model="authCtrl.newUserData.u">
+    </label>
+    <label class="item item-input item-icon-right">
+      <span class="input-label">Password</span><i class="icon ion-eye" on-touch="showPassword = !showPassword"></i>
+      <input type="password" id="password" placeholder="Password" ng-model="authCtrl.newUserData.p" ng-hide="showPassword">
+      <input type="text" id="passwordRaw" placeholder="Password" ng-model="authCtrl.newUserData.p" ng-show="showPassword">
+    </label>
+    </div>
+    <div class="padding">
+      <button class="button button-block button-positive" ng-click="authCtrl.signup(authCtrl.newUserData)">Let's get started!</button>
+    </div>
+  </ion-content>
+</ion-view>

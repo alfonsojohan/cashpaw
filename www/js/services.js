@@ -23,6 +23,8 @@ function AuthService(
   $state,
   $rootScope,
   $ionicHistory,
+  $ionicPopup,
+  $ionicLoading,
   $firebaseAuth,
   AUTH_EVENTS,
   PouchDbService) {
@@ -57,6 +59,7 @@ function AuthService(
       try {
         _pouchDb.get(_AUTH_ID)
         .then(function (doc) {
+          console.log('_pouchDb.get(_AUTH_ID) result: ', doc)
           return _pouchDb.remove(doc);
         })
         .then(function () {
@@ -72,8 +75,15 @@ function AuthService(
             location: "replace"
           });
         })
-        .error(function (err) {
-          console.error('AuthService -> onAuthStateChange: ', err);
+        .catch(function (err) {
+          switch (err.status) {
+            case 404:
+              // do nothing since the document is already deleted
+              break;
+              
+            default:
+            console.error('AuthService -> onAuthStateChange. Exception: ', err);
+          };
         });
       } catch (err) {
         console.error('AuthService -> onAuthStateChange. Exception: ', err);
@@ -81,6 +91,14 @@ function AuthService(
     
       // $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
     } else {
+
+      // Check the email is verified before proceeding
+      if(!data.emailVerified) {
+        console.log('Email address is not verified. Exiting... ', data);
+        $rootScope.$broadcast(AUTH_EVENTS.emailNotVerified);
+        _that.logout();
+      };
+
       _authData = data;
 
       // Save the data in pouchdb storage
@@ -109,7 +127,10 @@ function AuthService(
   /**
    * Monitor the firebase auth state changes
    */
-  _unregisterAuthCallback = _auth.$onAuthStateChanged(onAuthStateChange);
+  this.monitorAuthChange = function () {
+    console.log('AuthService.monitorAuthChange - monitoring for Firebase auth events');
+    _unregisterAuthCallback = _auth.$onAuthStateChanged(onAuthStateChange);
+  };
 
   this.init = function () {
 
@@ -149,7 +170,11 @@ function AuthService(
    * Function to check if the user has authenticated
    */
   this.isAuthenticated = function () {
-    console.log('TODO: AuthService.isAuthenticated');
+    var usr = _auth.$getAuth();
+    console.log('AuthService.isAuthenticatied', usr);
+    if (!usr || !usr.emailVerified) {
+      _authData = null;
+    }
     return (null !== _authData);
   };
 
@@ -167,19 +192,35 @@ function AuthService(
     return _auth.$signInWithEmailAndPassword(data.u, data.p);
   };
 
-  /**
-   * Social login using one of the providers from firebase
-   */
-  this.socialLogin = function (provider) {
+  this.signup = function (data) {
 
-    switch (provider) {
-      case 'google':
-        // do nothing since the provider is valid
-        break;
+    $ionicLoading.show();
     
-      default:
-        throw AUTH_EVENTS.unknownProvider;
+    try {
+      _auth.$createUserWithEmailAndPassword(data.u, data.p)
+      .then(function (result) {
+        console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword success', result);
+        result.sendEmailVerification();
+      })
+      .catch(function (result) {
+        console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword fail', result);  
+        $ionicPopup.alert({
+          title: 'Signup Failed',
+          template: result.message
+        });    
+      })
+      .finally(function () {
+        $ionicLoading.hide();
+      });
+    } catch (error) {
+      $ionicPopup.alert({
+        title: 'Ooops',
+        template: error
+      });      
+    } finally {
+        $ionicLoading.hide();
     };
-  };
+
+  };  // eo AuthService.signup
 
 };  // eo AuthService

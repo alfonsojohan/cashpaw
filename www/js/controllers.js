@@ -11,6 +11,7 @@ angular.module('starter.controllers', [])
 function AppCtrl(
   $scope,
   $state,
+  $ionicHistory,
   $ionicPopup,
   AuthService, 
   AUTH_EVENTS) {
@@ -23,19 +24,24 @@ function AppCtrl(
       template: 'You are not allowed to access this resource.'
     });
   });
- 
-  $scope.$on(AUTH_EVENTS.notAuthenticated, function(event) {
-    
-    AuthService.logout();
-    
-    // var alertPopup = $ionicPopup.alert({
-    //   title: 'Session Lost!',
-    //   template: 'Sorry, You have to login again.'
-    // });
 
-    $state.go('login', {
+  function loginState () {
+    AuthService.logout();
+    return $state.go('login', {
       location: "replace"
     });
+  };
+   
+  $scope.$on(AUTH_EVENTS.notAuthenticated, function(event) {
+    return loginState();
+  });
+
+  $scope.$on(AUTH_EVENTS.emailNotVerified, function (event) {
+    $ionicPopup.alert({
+      title: 'Oops',
+      template: 'Please verify your email in order to login'
+    });
+    return loginState();
   });
 
 };  // eo AppCtrl
@@ -52,7 +58,7 @@ function InitCtrl(
 
   function monitorStateChangeStart(event, next, nextParams, fromState) {
 
-    console.log('InitCtrl.monitorStateChangeStart', next, fromState);
+    console.log('InitCtrl.monitorStateChangeStart::', fromState.name, ' -->', next.name);
 
     //TODO: Complete unauthorized check
     if ('data' in next && 'authorizedRoles' in next.data) {
@@ -65,11 +71,16 @@ function InitCtrl(
     };
 
     if (!AuthService.isAuthenticated()) {
-      if (next.name !== 'login') {
+      if (next.name == 'signup') {
+          // do nothing
+          return true;
+      } else if (next.name !== 'login') {
         console.info('User is not authenticated, sending to login page');
         event.preventDefault();
         $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
       }
+    } else {
+      //TODO: Check the validity of the login token
     }
   };
 
@@ -77,15 +88,13 @@ function InitCtrl(
    * Init the authentication service, once completed move to the dashboard
    * The event monitor will handle the rest
    */
-  PouchDbService.init()
-  .then(function () {
-    console.log('PouchDb init complete');
-    return AuthService.init();  
-  })
+  AuthService.init()  
   .then(function (data) {
     
     console.log('AuthService.init complete.');
     
+    AuthService.monitorAuthChange();
+
     /**
      * Intercept all state changes and check for authentication & authorization
      */
@@ -107,13 +116,13 @@ function InitCtrl(
     return true;
   })
   .catch(function (error) {
-    console.error('Auth.init failed.', error);
+    console.error('AuthService.init failed.', error);
   });
   
 };
 
 /**
- * Controller for authentication and authorization
+ * Controller for authentication, authorization and signup
  */
 function AuthCtrl(
   $ionicLoading, 
@@ -125,6 +134,7 @@ function AuthCtrl(
   console.log('AuthCtrl');
 
   this.data = AuthService.formData;
+  this.newUserData = {u: null, p: null};
 
   /**
    * Handle login click from UI
@@ -139,9 +149,6 @@ function AuthCtrl(
       AuthService.login(data)
       .then(function (firebaseUser) {
         console.log("Signed in as:", firebaseUser);
-        // $state.go('tab.dash', {
-        //   location: "replace"
-        // });
       })
       .catch(function (error) {
         console.log("Authentication failed:", error);
@@ -172,6 +179,15 @@ function AuthCtrl(
     };
   
   };  // eo AuthCtrl.login
+
+  this.newUser = function () {
+    $state.go('signup');
+  };
+
+  this.signup = function (data) {
+    console.log('AuthCtrl.signup ', data);
+    AuthService.signup(data);
+  };  // eo AuthCtrl.signup
 
   this.logout = function () {
     AuthService.logout();
