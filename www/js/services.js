@@ -93,15 +93,12 @@ function AuthService(
       } catch (err) {
         console.error('AuthService -> onAuthStateChange. Exception: ', err);
       };
-    
-      // $rootScope.$broadcast(AUTH_EVENTS.notAuthenticated);
     } else {
 
       // Check the email is verified before proceeding
       if(!data.emailVerified) {
-        console.log('Email address is not verified. Exiting... ', data);
-        $rootScope.$broadcast(AUTH_EVENTS.emailNotVerified);
-        return _that.logout();
+        console.info('Email address is not verified. Cancel login.', data);
+        return $rootScope.$broadcast(AUTH_EVENTS.emailNotVerified);
       };
 
       _authData = data;
@@ -127,9 +124,14 @@ function AuthService(
    * Monitor the firebase auth state changes
    */
   this.monitorAuthChange = function () {
-    // console.log('AuthService.monitorAuthChange - monitoring for Firebase auth events');
+    console.log('AuthService.monitorAuthChange');    
     _unregisterAuthCallback = _auth.$onAuthStateChanged(onAuthStateChange, _that);
   };
+
+  this.cancelAuthMonitor = function () {
+    console.log('AuthService.cancelAuthMonitor');
+    _unregisterAuthCallback();
+  }
 
   this.init = function () {
 
@@ -191,22 +193,40 @@ function AuthService(
     return _auth.$signInWithEmailAndPassword(data.u, data.p);
   };
 
+  /**
+   * Create new user account. During this we need to cancel the auth monitoring so that 
+   * we have better control of the flow
+   */
   this.signup = function (data) {
 
     var defer = $q.defer();
-    
+    var out = null;
+
+    _that.cancelAuthMonitor();
+
     _auth.$createUserWithEmailAndPassword(data.u, data.p)
     .then(function (result) {
       out = result;
       console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword success', result);
-      result.sendEmailVerification();
-      defer.resolve(out);
+      return result.sendEmailVerification();
+    })
+    .then(function (){
+      out.updateProfile({displayName: data.n})
+      .then (function(result) {
+        console.log('Profile update successful', result);
+        defer.resolve(out);
+      })
+      .catch(function (e) {
+        console.info('Profile update failed. Account creation was successful', e);
+        defer.resolve(out);
+      });
     })
     .catch(function (result) {
       console.log('AuthService.signup - $firebaseAuth.$createUserWithEmailAndPassword fail', result);  
       defer.reject(result);
     })
     .finally(function () {
+      _that.monitorAuthChange();
     });
 
     return defer.promise;

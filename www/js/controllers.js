@@ -138,7 +138,7 @@ function AuthCtrl(
   // console.log('AuthCtrl');
 
   this.data = AuthService.formData;
-  this.newUserData = {u: null, p: null};
+  this.newUserData = {u: null, p: null, n: null};
 
   /**
    * Handle login click from UI
@@ -194,21 +194,24 @@ function AuthCtrl(
       $ionicLoading.show();
       AuthService.signup(data)
       .then(function (result) {
-
+        console.log('signup complete');
       })
       .catch(function (result) {
+        console.log('signup fial');
         $ionicPopup.alert({
           title: 'Signup Failed',
           template: result.message
         });
       })    
+      .finally(function (){
+        $ionicLoading.hide();
+      });
     } catch (error) {
+      $ionicLoading.hide();
       $ionicPopup.alert({
         title: 'Ooops',
         template: error
       });      
-    } finally {
-      $ionicLoading.hide();
     }
   };  // eo AuthCtrl.signup
 
