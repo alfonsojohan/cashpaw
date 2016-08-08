@@ -108,15 +108,16 @@ function AuthService(
         _id: _AUTH_ID,
         data: data
       })
+      .catch(function (err) {
+        console.error(err);
+      })
       .then(function () {
         resetHistory();
         $state.go('tab.dash', {
           location: "replace"
         });
       })
-      .catch(function (err) {
-        console.error(err);
-      });
+ 
     }
   };  // eo onAuthStateChange
 
